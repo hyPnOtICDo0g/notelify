@@ -1,0 +1,24 @@
+{
+   "department": {
+      "dept1": {
+         "department_id": "D9201",
+         "branch": "it"
+      },
+      "dept2": {
+         "department_id": "D2792",
+         "branch": "civil"
+      },
+      "dept3": {
+         "department_id": "D3675",
+         "branch": "ele"
+      },
+      "dept4": {
+         "department_id": "D2801",
+         "branch": "it"
+      }
+   },
+   "subject": {
+      "SUB1": "SUBJECT 1 COMPLETE NAME",
+      "SUB2": "SUBJECT 2 COMPLETE NAME"
+   }
+}

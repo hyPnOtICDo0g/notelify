@@ -32,12 +32,12 @@ class constants:
             '''CREATE TABLE notes(
                 file_name TEXT NOT NULL,
                 subject_name TEXT NOT NULL,
-                subject_abbr VARCHAR(5) PRIMARY KEY,
+                subject_abbr VARCHAR(5),
                 module_no INT NOT NULL,
                 professor_tgid int,
                 department VARCHAR(6) NOT NULL,
-                message_id INT UNIQUE NOT NULL,
-                total_requests INT NOT NULL,
+                message_id INT PRIMARY KEY,
+                total_requests INT,
                 FOREIGN KEY(professor_tgid) REFERENCES professor(telegram_id) ON DELETE SET NULL
             );'''
         )
@@ -49,6 +49,14 @@ class constants:
             ('register', 'Register for bot access [STUDENT]'),
             ('notes', 'View / Add / Remove / Replace lecture notes [PROFESSOR]')
         ]
+
+    ENV_VARS = {
+        'BOT_TOKEN',
+        'DATABASE_URL',
+        'OWNER_ID',
+        'GROUP_ID',
+        'CHANNEL_ID'
+    }
 
     START_MESSAGE = dedent('''
         Send me a search query.
@@ -69,7 +77,7 @@ class constants:
         • */register*: _Register with your USN and Department for bot access_
         • */unregister*: _Unregister and delete your data_
 
-        \>* _Professor Commands_*:
+        \> *_Professor Commands_*:
         • */notes*: _Manage / View uploaded notes_
 
         *Detailed usage is displayed on clicking any of the above\.*''')
@@ -85,3 +93,9 @@ class constants:
         • Telegram ID: `{id}`
         • Role: *{role}*
         • Department: *{dept}*''')
+
+    VIEW_STRING = dedent('''
+        • File: [{file}](https://t.me/c/{group_id}/{id})
+        • ID: `{id}`
+        • Subject: *{subject}*
+        • Module: *{module}*''')

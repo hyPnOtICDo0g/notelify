@@ -35,15 +35,17 @@ class DBHandler:
             self.disconnect()
             LOGGER.info('Tables created.')
         except DuplicateTable:
-            LOGGER.info('Tables already exist.')
+            LOGGER.info('Tables exist.')
         except AttributeError:
-            LOGGER.critical('Database not found, exiting now.')
+            LOGGER.critical('Database not found, Exiting.')
             exitnow(1)
         finally:
             return self
 
     def write(self, table: str, values: tuple) -> None:
         '''PLACEHOLDER'''
+        # not sure if this line is prone to SQL injections
+        # please open an issue if that's the case
         query = f'INSERT INTO {table} VALUES(' + ', '.join(['%s'] * len(values)) + ')'
         self.connect()
         self.cur.execute(query, values)
@@ -64,16 +66,17 @@ class DBHandler:
         finally:
             self.disconnect()
 
-    def delete(self, table: str, where: str) -> None:
+    def delete(self, table: str, where: str) -> int:
         '''PLACEHOLDER'''
         query = f'DELETE FROM {table} WHERE {where}'
         self.connect()
         self.cur.execute(query)
         self.disconnect()
+        return self.cur.rowcount
 
     def update(self, table: str, set: str, where: str) -> None:
         '''PLACEHOLDER'''
-        query = f'UPDATE {table} SET {set} WHERE {where}',
+        query = f'UPDATE {table} SET {set} WHERE {where}'
         self.connect()
         self.cur.execute(query)
         self.disconnect()
@@ -89,8 +92,8 @@ class DBHandler:
 
     def load(self) -> None:
         '''PLACEHOLDER'''
-        db_data['admin'] += [x[0] for x in self.fetch('telegram_id', 'manager')] + [int(config['OWNER_ID'])]
-        db_data['professor'] += [x[0] for x in self.fetch('telegram_id', 'professor')]
+        db_data['admin'] += [x[0] for x in self.fetch('telegram_id', 'manager')] # + [int(config['OWNER_ID'])]
+        db_data['professor'] += [x[0] for x in self.fetch('telegram_id', 'professor')] # + [int(config['OWNER_ID'])]
         db_data['student'] += [x[0] for x in self.fetch('telegram_id', 'student')]
         try:
             for x, y in db_data['department'].items():

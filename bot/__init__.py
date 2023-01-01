@@ -8,7 +8,7 @@ from telegram.ext import Application, ApplicationBuilder
 
 # bot commands
 async def post_init(application: Application) -> None:
-    '''PLACEHOLDER'''
+    '''Callback function to set bot commands after bot initialization'''
     await application.bot.set_my_commands(constants.BOTCOMMANDS)
 
 # a mutex lock to access shared states
@@ -38,7 +38,9 @@ try:
     db_data['subject'] = x['subject']
     # env variables
     config = dotenv_values('.env')
-    if len(config) < 4 or not all(set(config.values()).intersection({None, ''})):
+    if len(config) < 5 \
+        or (set(config.keys()) - constants.ENV_VARS) \
+        or not all(set(config.values()).intersection({None, ''})):
         raise FileNotFoundError
 except FileNotFoundError:
     LOGGER.critical('JSON file or env variables are missing! Exiting.')

@@ -13,7 +13,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if CustomFilters.user_filter.check_update(update):
         await update.effective_message.reply_text(constants.START_MESSAGE)
     else:
-        await update.effective_message.reply_text('Oops! Not an Authorized user.')
+        await update.effective_message.reply_text('Oops! Not an authorized user.')
         LOGGER.info(f'UNAUTHORIZED | UID: {update.message.chat.id} | UN: {update.message.chat.username}')
 
 async def help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -37,6 +37,7 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             dbh().write('student', values)
             async with mutex:
                 db_data['student'].append(update.effective_user.id)
+            LOGGER.info(f'REGISTER | Student: {update.effective_user.id} | USN: {context.args[0].upper()}')
             await update.effective_message.reply_markdown(
                 constants.REG_MESSAGE.format(
                     first=update.effective_user.first_name,
@@ -45,9 +46,9 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         else:
             raise KeyError
     except UniqueViolation:
-        await update.effective_message.reply_markdown('*Already Registered.*')
+        await update.effective_message.reply_text('Already registered.')
     except KeyError:
-        await update.effective_message.reply_text('Incorrect Format, try again.')
+        await update.effective_message.reply_text('Incorrect format, try again.')
     except IndexError:
         await update.effective_message.reply_markdown(constants.REG_HELPSTRING)
 
@@ -65,15 +66,19 @@ async def unregister(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     '''PLACEHOLDER'''
     try:
         user = utils.find_role(update)
+        # return value of delete() is ignored here as the only
+        # users who can use this command are students and professors
+        # and they are handled by exceptions
         dbh().delete(user, f'telegram_id = {update.effective_user.id}')
         async with mutex:
             db_data[user].remove(update.effective_user.id)
         await update.effective_message.reply_markdown('*Unregistered. Bot access revoked.*')
+        LOGGER.info(f'UNREGISTER | {user.capitalize()}: {update.effective_user.id}')
     except UndefinedTable:
-        await update.effective_message.reply_markdown('*Admins cannot unregister. Contact Bot Manager.*')
+        await update.effective_message.reply_text('Admins cannot unregister. Contact bot manager.')
 
+application.add_handler(CommandHandler('profile', profile, block=False))
 application.add_handler(CommandHandler('help', help, block=False, filters=CustomFilters.user_filter))
 application.add_handler(CommandHandler('start', start, block=False, filters=~CustomFilters.group_filter))
-application.add_handler(CommandHandler('profile', profile, block=False, filters=CustomFilters.user_filter))
 application.add_handler(CommandHandler('register', register, block=False, filters=CustomFilters.group_filter))
 application.add_handler(CommandHandler('unregister', unregister, block=False, filters=~CustomFilters.group_filter & CustomFilters.user_filter))
