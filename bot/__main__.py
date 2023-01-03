@@ -1,4 +1,4 @@
-from bot import config, application
+from bot import application
 from .modules.dbhandler import DBHandler
 from .modules import userhandler, noteshandler
 

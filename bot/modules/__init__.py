@@ -32,12 +32,12 @@ class constants:
             '''CREATE TABLE notes(
                 file_name TEXT NOT NULL,
                 subject_name TEXT NOT NULL,
-                subject_abbr VARCHAR(5),
+                subject_abbr VARCHAR(5) UNIQUE NOT NULL,
                 module_no INT NOT NULL,
                 professor_tgid int,
                 department VARCHAR(6) NOT NULL,
                 message_id INT PRIMARY KEY,
-                total_requests INT,
+                total_requests INT DEFAULT 0 NOT NULL,
                 FOREIGN KEY(professor_tgid) REFERENCES professor(telegram_id) ON DELETE SET NULL
             );'''
         )
@@ -98,4 +98,7 @@ class constants:
         • File: [{file}](https://t.me/c/{group_id}/{id})
         • ID: `{id}`
         • Subject: *{subject}*
-        • Module: *{module}*''')
+        • Module: *{module}*
+        • Total requests: *{req}*''')
+
+    AUTHOR_STRING = 'Author: [{first}](tg://user?id={user_id})'

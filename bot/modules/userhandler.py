@@ -68,7 +68,7 @@ async def unregister(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         user = utils.find_role(update)
         # return value of delete() is ignored here as the only
         # users who can use this command are students and professors
-        # and they are handled by exceptions
+        # and they are handled using exceptions
         dbh().delete(user, f'telegram_id = {update.effective_user.id}')
         async with mutex:
             db_data[user].remove(update.effective_user.id)

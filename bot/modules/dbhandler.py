@@ -44,8 +44,6 @@ class DBHandler:
 
     def write(self, table: str, values: tuple) -> None:
         '''PLACEHOLDER'''
-        # not sure if this line is prone to SQL injections
-        # please open an issue if that's the case
         query = f'INSERT INTO {table} VALUES(' + ', '.join(['%s'] * len(values)) + ')'
         self.connect()
         self.cur.execute(query, values)
@@ -59,6 +57,8 @@ class DBHandler:
             limit: Union[int, str] = 'all') -> list[tuple]:
         '''PLACEHOLDER'''
         try:
+            # not sure if this line is prone to SQL injections in general
+            # please open an issue if that's the case
             query = f'SELECT {fields} FROM {table} WHERE {where} LIMIT {limit}'
             self.connect()
             self.cur.execute(query)
@@ -74,11 +74,11 @@ class DBHandler:
         self.disconnect()
         return self.cur.rowcount
 
-    def update(self, table: str, set: str, where: str) -> None:
+    def update(self, table: str, set: str, where: str, values: tuple) -> None:
         '''PLACEHOLDER'''
         query = f'UPDATE {table} SET {set} WHERE {where}'
         self.connect()
-        self.cur.execute(query)
+        self.cur.execute(query, values)
         self.disconnect()
 
     def raw(self, query: str) -> list[tuple]:

@@ -21,7 +21,7 @@ basicConfig(
 )
 LOGGER = getLogger(__name__)
 
-# maintain a dict for quick checks
+# maintain a dict for quick validation checks
 db_data = {
     'admin': [],
     'student': [],
@@ -42,8 +42,8 @@ try:
         or (set(config.keys()) - constants.ENV_VARS) \
         or not all(set(config.values()).intersection({None, ''})):
         raise FileNotFoundError
-except FileNotFoundError:
-    LOGGER.critical('JSON file or env variables are missing! Exiting.')
+except (FileNotFoundError, ValueError):
+    LOGGER.critical('JSON file or env variables are missing / corrupt! Exiting.')
     exitnow(1)
 
 application = (
