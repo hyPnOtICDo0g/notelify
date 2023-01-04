@@ -38,9 +38,9 @@ try:
     db_data['subject'] = x['subject']
     # env variables
     config = dotenv_values('.env')
-    if len(config) < 5 \
-        or (set(config.keys()) - constants.ENV_VARS) \
-        or not all(set(config.values()).intersection({None, ''})):
+    if (len(config) < 5
+        or (set(config.keys()) - constants.ENV_VARS)
+        or not all(set(config.values()).intersection({None, ''}))):
         raise FileNotFoundError
 except (FileNotFoundError, ValueError):
     LOGGER.critical('JSON file or env variables are missing / corrupt! Exiting.')

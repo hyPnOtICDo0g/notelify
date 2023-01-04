@@ -12,8 +12,8 @@ from telegram.ext import ContextTypes, CommandHandler
 class NotesHandler:
     @staticmethod
     async def view(update: Update) -> None:
-        '''PLACEHOLDER'''
-        res = dbh().fetch(
+        '''Display notes uploaded by a professor'''
+        res = dbh.fetch(
                 'file_name, message_id, subject_abbr, module_no, total_requests',
                 'notes',
                 f'professor_tgid = {update.effective_user.id}')
@@ -24,7 +24,7 @@ class NotesHandler:
 
     @staticmethod
     async def add(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        '''PLACEHOLDER'''
+        '''Validate and add notes to the table'''
         # set of sanity checks below, exceptions are caught on failure
         try:
             # check if a subject is valid
@@ -35,6 +35,7 @@ class NotesHandler:
             file_name = update.message.reply_to_message.document.file_name
             # if all checks pass, forward the document to the channel
             forwarded_message_id = await utils.forwardMessage(update, context, config['CHANNEL_ID'])
+            user = utils.find_role(update)
             # build value tuple
             values = (
                 file_name,
@@ -42,13 +43,13 @@ class NotesHandler:
                 context.args[1].upper(),
                 module_no,
                 update.effective_user.id,
-                utils.find_dept('professor', update),
+                utils.find_dept(user, update),
                 forwarded_message_id.message_id)
             # add the notes' details to DB
-            dbh().write('notes', values)
+            dbh.write('notes', values)
             LOGGER.info(f'NOTES - ADD | Professor: {update.effective_user.id} | Notes: {file_name}')
         except IndexError:
-            await update.effective_message.reply_text('PLACEHOLDER - ADD HELP')
+            await update.effective_message.reply_markdown(constants.NOTES_ADD_HELPSTRING)
         except KeyError:
             await update.effective_message.reply_text('Invalid subject, it does not exist.')
         except ValueError:
@@ -58,12 +59,12 @@ class NotesHandler:
 
     @staticmethod
     async def remove(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        '''PLACEHOLDER'''
+        '''Validate and delete notes from the table'''
         try:
             # check if the message ID is an integer
             message_id = int(context.args[1])
             # return value of delete() indicates whether a record was deleted or not
-            res = dbh().delete('notes', f'professor_tgid = {update.effective_user.id} AND message_id = {message_id}')
+            res = dbh.delete('notes', f'professor_tgid = {update.effective_user.id} AND message_id = {message_id}')
             if res:
                 # this function will try to delete the notes from the channel
                 # but if the message is older than 48hrs the message cannot be deleted
@@ -74,18 +75,18 @@ class NotesHandler:
             else:
                 raise ValueError
         except IndexError:
-            await update.effective_message.reply_markdown('PLACEHOLDER - REMOVE HELP')
+            await update.effective_message.reply_markdown(constants.NOTES_REMOVE_HELPSTRING)
 
     @staticmethod
     async def replace(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        '''PLACEHOLDER'''
+        '''Validate and update existing notes in the table'''
         try:
             # check if the message ID is an integer
             message_id = int(context.args[1])
             # check if message is a document
             file_name = update.message.reply_to_message.document.file_name
-            # check if the message_id exists in the database
-            res = dbh().fetch(
+            # check if the message_id exists in the table
+            res = dbh.fetch(
                 'message_id', 'notes',
                 f'professor_tgid = {update.effective_user.id} AND message_id = {message_id}')
             if res:
@@ -95,17 +96,17 @@ class NotesHandler:
                 await context.bot.delete_message(chat_id=int(config['CHANNEL_ID']), message_id=message_id)
                 # update database with new message_id
                 values = (forwarded_message_id.message_id, file_name, update.effective_user.id, context.args[1])
-                dbh().update('notes', 'message_id = %s, file_name = %s', 'professor_tgid = %s AND message_id = %s', values)
+                dbh.update('notes', 'message_id = %s, file_name = %s', 'professor_tgid = %s AND message_id = %s', values)
                 await update.effective_message.reply_markdown('*Successfully replaced notes.*')
                 LOGGER.info(f'NOTES - REPLACE | Professor: {update.effective_user.id} | OLD ID: {message_id}')
             else:
                 raise ValueError
         except IndexError:
-            await update.effective_message.reply_markdown('PLACEHOLDER - REPLACE HELP')
+            await update.effective_message.reply_markdown(constants.NOTES_REPLACE_HELPSTRING)
 
     @classmethod
     async def notes(cls, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        '''PLACEHOLDER'''
+        '''Handler method for all notes functions'''
         try:
             match context.args[0]:
                 case 'view':
@@ -122,7 +123,7 @@ class NotesHandler:
                 case _:
                     await update.effective_message.reply_text('Invalid Method.')
         except IndexError:
-            await update.effective_message.reply_markdown('PLACEHOLDER - NOTES HELP')
+            await update.effective_message.reply_markdown(constants.NOTES_HELPSTRING)
         # common exceptions handled below
         except ValueError:
             await update.effective_message.reply_text('Invalid ID, Try again.')
@@ -134,13 +135,13 @@ class NotesHandler:
 class SearchHandler:
     @staticmethod
     async def prof(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        '''PLACEHOLDER'''
+        '''Search for all notes by a professor'''
         start = perf_counter()
         # check if the professor exists
-        check = dbh().fetch('name, telegram_id', 'professor', f"abbreviation = '{context.args[1]}'")
+        check = dbh.fetch('name, telegram_id', 'professor', f"abbreviation = '{context.args[1]}'")
         if check:
             # retrieve all notes by a specific professor
-            res = dbh().fetch(
+            res = dbh.fetch(
                     'file_name, message_id, subject_abbr, module_no, total_requests',
                     'notes',
                     f'professor_tgid = {check[0][1]}')
@@ -151,7 +152,7 @@ class SearchHandler:
                     f'\n\n{constants.AUTHOR_STRING.format(first=check[0][0], user_id=check[0][1])}')
                 # increment `total_requests` of all retrieved notes by 1
                 values = (check[0][1],)
-                dbh().update('notes', 'total_requests = total_requests + 1', 'professor_tgid = %s', values)
+                dbh.update('notes', 'total_requests = total_requests + 1', 'professor_tgid = %s', values)
             else:
                 raise NameError
         else:
@@ -159,6 +160,7 @@ class SearchHandler:
 
     @staticmethod
     async def sub(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        '''Search for all notes by a subject'''
         start = perf_counter()
         try:
             # default module number set to -1
@@ -171,7 +173,7 @@ class SearchHandler:
             except IndexError:
                 pass
 
-            res = dbh().raw(f"""
+            res = dbh.raw(f"""
                 SELECT file_name, message_id, module_no, total_requests, professor_tgid, name
                 FROM notes, professor
                 WHERE subject_abbr = '{context.args[1].upper()}' AND
@@ -197,7 +199,7 @@ class SearchHandler:
                     ) for file_name, message_id, module_no, total_requests, professor_tgid, name in res]))
                 for x in res:
                     values = (x[1],)
-                    dbh().update('notes', 'total_requests = total_requests + 1','message_id = %s', values)
+                    dbh.update('notes', 'total_requests = total_requests + 1','message_id = %s', values)
             else:
                 raise NameError
         except KeyError:
@@ -207,7 +209,7 @@ class SearchHandler:
 
     @classmethod
     async def search(cls, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        '''PLACEHOLDER'''
+        '''Handler method for all search functions'''
         try:
             match context.args[0]:
                 case 'prof':
@@ -220,7 +222,7 @@ class SearchHandler:
                 case _:
                     await update.effective_message.reply_text('Invalid search filter.')
         except IndexError:
-            await update.effective_message.reply_markdown('PLACEHOLDER - SEARCH HELP')
+            await update.effective_message.reply_markdown(constants.SEARCH_HELPSTRING)
         except SyntaxError:
             await update.effective_message.reply_text('Invalid professor abbreviation.')
         except NameError:

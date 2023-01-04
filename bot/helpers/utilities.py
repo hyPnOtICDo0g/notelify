@@ -10,20 +10,22 @@ class Utilities:
     @staticmethod
     def find_role(update: Update) -> Union[str, None]:
         '''Find the role of an user'''
-        if CustomFilters.student_filter.check_update(update):
-            return 'student'
+        if CustomFilters.admin_filter.check_update(update):
+            return 'admin'
         elif CustomFilters.professor_filter.check_update(update):
             return 'professor'
-        elif CustomFilters.admin_filter.check_update(update):
-            return 'admin'
+        elif CustomFilters.student_filter.check_update(update):
+            return 'student'
         else:
             return None
 
     @staticmethod
     def find_dept(user: Union[str, None], update: Update) -> Union[str, None]:
         '''Find the department an user belongs to'''
-        if user not in ('admin', None):
-            res = dbh().fetch('department_id', user, f'telegram_id = {update.effective_user.id}')
+        if user == 'admin':
+            return 'ADMIN'
+        elif user is not None:
+            res = dbh.fetch('department_id', user, f'telegram_id = {update.effective_user.id}')
             return {x for x, y in db_data['department'].items() if y['department_id'] == res[0][0]}.pop()
         return None
 

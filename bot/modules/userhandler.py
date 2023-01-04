@@ -9,7 +9,7 @@ from telegram.ext import ContextTypes, CommandHandler
 from psycopg2.errors import UniqueViolation, UndefinedTable
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    '''PLACEHOLDER'''
+    '''Greets an user when the bot is used for the first time'''
     if CustomFilters.user_filter.check_update(update):
         await update.effective_message.reply_text(constants.START_MESSAGE)
     else:
@@ -17,11 +17,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         LOGGER.info(f'UNAUTHORIZED | UID: {update.message.chat.id} | UN: {update.message.chat.username}')
 
 async def help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    '''PLACEHOLDER'''
+    '''Display the help message'''
     await update.effective_message.reply_markdown_v2(constants.HELPSTRING)
 
 async def register(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    '''PLACEHOLDER'''
+    '''Register students for bot access'''
     try:
         # context.args ==> [usn, dept_name]
         context.args[0]
@@ -34,7 +34,7 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                 context.args[0].upper(),
                 update.effective_user.id,
                 db_data['department'][context.args[1]]['department_id'])
-            dbh().write('student', values)
+            dbh.write('student', values)
             async with mutex:
                 db_data['student'].append(update.effective_user.id)
             LOGGER.info(f'REGISTER | Student: {update.effective_user.id} | USN: {context.args[0].upper()}')
@@ -53,7 +53,7 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await update.effective_message.reply_markdown(constants.REG_HELPSTRING)
 
 async def profile(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    '''PLACEHOLDER'''
+    '''Display user profile attributes'''
     user = utils.find_role(update)
     await update.effective_message.reply_markdown(constants.PROFILE_STRING.format(
         name=update.effective_user.first_name,
@@ -63,13 +63,13 @@ async def profile(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         dept=utils.find_dept(user, update)))
 
 async def unregister(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    '''PLACEHOLDER'''
+    '''Remove user details from the table and revoke bot access'''
     try:
         user = utils.find_role(update)
         # return value of delete() is ignored here as the only
         # users who can use this command are students and professors
         # and they are handled using exceptions
-        dbh().delete(user, f'telegram_id = {update.effective_user.id}')
+        dbh.delete(user, f'telegram_id = {update.effective_user.id}')
         async with mutex:
             db_data[user].remove(update.effective_user.id)
         await update.effective_message.reply_markdown('*Unregistered. Bot access revoked.*')

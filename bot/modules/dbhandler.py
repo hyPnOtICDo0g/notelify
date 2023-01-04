@@ -8,31 +8,30 @@ from psycopg2 import connect, DatabaseError
 from psycopg2.errors import DuplicateTable, UniqueViolation
 
 class DBHandler:
-    def __init__(self) -> None:
-        self.conn = None
-        self.cur = None
-
-    def connect(self) -> None:
-        '''PLACEHOLDER'''
+    @classmethod
+    def connect(cls) -> None:
+        '''Create a new database session'''
         try:
-            self.conn = connect(config['DATABASE_URL'])
-            self.cur = self.conn.cursor()
+            cls.conn = connect(config['DATABASE_URL'])
+            cls.cur = cls.conn.cursor()
         except DatabaseError as e:
             LOGGER.error(e)
 
-    def disconnect(self) -> None:
-        '''PLACEHOLDER'''
-        self.conn.commit()
-        self.cur.close()
-        self.conn.close()
+    @classmethod
+    def disconnect(cls) -> None:
+        '''Commit pending transactions and close database connection'''
+        cls.conn.commit()
+        cls.cur.close()
+        cls.conn.close()
 
-    def create(self) -> DBHandler:
-        '''PLACEHOLDER'''
+    @classmethod
+    def create(cls) -> DBHandler:
+        '''Create all the required tables'''
         try:
-            self.connect()
+            cls.connect()
             for x in constants.TABLES:
-                self.cur.execute(x)
-            self.disconnect()
+                cls.cur.execute(x)
+            cls.disconnect()
             LOGGER.info('Tables created.')
         except DuplicateTable:
             LOGGER.info('Tables exist.')
@@ -40,65 +39,71 @@ class DBHandler:
             LOGGER.critical('Database not found, Exiting.')
             exitnow(1)
         finally:
-            return self
+            return cls
 
-    def write(self, table: str, values: tuple) -> None:
-        '''PLACEHOLDER'''
+    @classmethod
+    def write(cls, table: str, values: tuple) -> None:
+        '''Insert records to a table'''
         query = f'INSERT INTO {table} VALUES(' + ', '.join(['%s'] * len(values)) + ')'
-        self.connect()
-        self.cur.execute(query, values)
-        self.disconnect()
+        cls.connect()
+        cls.cur.execute(query, values)
+        cls.disconnect()
 
+    @classmethod
     def fetch(
-            self,
+            cls,
             fields: str,
             table: str,
             where: Union[bool, str] = True,
             limit: Union[int, str] = 'all') -> list[tuple]:
-        '''PLACEHOLDER'''
+        '''Fetch data from a table'''
         try:
             # not sure if this line is prone to SQL injections in general
             # please open an issue if that's the case
             query = f'SELECT {fields} FROM {table} WHERE {where} LIMIT {limit}'
-            self.connect()
-            self.cur.execute(query)
-            return self.cur.fetchall()
+            cls.connect()
+            cls.cur.execute(query)
+            return cls.cur.fetchall()
         finally:
-            self.disconnect()
+            cls.disconnect()
 
-    def delete(self, table: str, where: str) -> int:
-        '''PLACEHOLDER'''
+    @classmethod
+    def delete(cls, table: str, where: str) -> int:
+        '''Remove records from a table'''
         query = f'DELETE FROM {table} WHERE {where}'
-        self.connect()
-        self.cur.execute(query)
-        self.disconnect()
-        return self.cur.rowcount
+        cls.connect()
+        cls.cur.execute(query)
+        cls.disconnect()
+        return cls.cur.rowcount
 
-    def update(self, table: str, set: str, where: str, values: tuple) -> None:
-        '''PLACEHOLDER'''
+    @classmethod
+    def update(cls, table: str, set: str, where: str, values: tuple) -> None:
+        '''Modify existing records in a table'''
         query = f'UPDATE {table} SET {set} WHERE {where}'
-        self.connect()
-        self.cur.execute(query, values)
-        self.disconnect()
+        cls.connect()
+        cls.cur.execute(query, values)
+        cls.disconnect()
 
-    def raw(self, query: str) -> list[tuple]:
-        '''PLACEHOLDER'''
+    @classmethod
+    def raw(cls, query: str) -> list[tuple]:
+        '''Perform a raw SQL query and return records'''
         try:
-            self.connect()
-            self.cur.execute(query)
-            return self.cur.fetchall()
+            cls.connect()
+            cls.cur.execute(query)
+            return cls.cur.fetchall()
         finally:
-            self.disconnect()
+            cls.disconnect()
 
-    def load(self) -> None:
-        '''PLACEHOLDER'''
-        db_data['admin'] += [x[0] for x in self.fetch('telegram_id', 'manager')] # + [int(config['OWNER_ID'])]
-        db_data['professor'] += [x[0] for x in self.fetch('telegram_id', 'professor')] # + [int(config['OWNER_ID'])]
-        db_data['student'] += [x[0] for x in self.fetch('telegram_id', 'student')]
+    @classmethod
+    def load(cls) -> None:
+        '''Load data from and into a table during startup'''
+        db_data['admin'] += [x[0] for x in cls.fetch('telegram_id', 'manager')] # + [int(config['OWNER_ID'])]
+        db_data['professor'] += [x[0] for x in cls.fetch('telegram_id', 'professor')] # + [int(config['OWNER_ID'])]
+        db_data['student'] += [x[0] for x in cls.fetch('telegram_id', 'student')]
         try:
             for x, y in db_data['department'].items():
                 values = (x, y['department_id'], y['branch'])
-                self.write('department', values)
+                cls.write('department', values)
         except UniqueViolation:
             pass
         LOGGER.info('Information loaded.')

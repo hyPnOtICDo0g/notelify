@@ -87,6 +87,53 @@ class constants:
         • Use it in this format: `/register USN DEPT_NAME`
         • The bot's DM can be used for further usage.''')
 
+    NOTES_HELPSTRING = dedent('''
+        > *Functions available*:
+        • `view`: _Display list of notes uploaded by you_
+        • `add`: _Add notes to the database_
+        • `remove`: _Remove notes from the database_
+        • `replace`: _Replace existing notes with updated notes_
+
+        > *Usage*:
+            `/notes <function> [arguments]`
+
+        *Detailed argument usage is displayed on executing a function.*''')
+
+    NOTES_ADD_HELPSTRING = dedent('''
+        • _This function can be used to share notes uploaded to telegram._
+        • _Notes are added by replying to the required document._
+        • _It expects two arguments, subject abbreviation & module no._
+
+        *Example*:
+            `/notes add dbms 4` _(reply to document first)_''')
+
+    NOTES_REMOVE_HELPSTRING = dedent('''
+        • _This command expects one argument, the message ID._
+        • _The message ID can be obtained by using the view function._
+
+        *Example*:
+            `/notes remove 2521`''')
+
+    NOTES_REPLACE_HELPSTRING = dedent('''
+        • _If existing notes require an update, this function can be used._
+        • _It expects one argument, the message ID of the existing notes._
+        • _Notes can be replaced by replying to the new document._
+
+        *Example*:
+            `/notes replace 4821` _(reply to document first)_''')
+
+    SEARCH_HELPSTRING = dedent('''
+    > *Search filters* _[search by]_:
+    • `prof`: _professor_ | args: _professor abbreviation_
+    • `sub`: _subject_ | args: _subject abbreviation [module no.]_
+
+    > *Usage*:
+        `/search <filter> [arguments]`
+
+    > *Examples*:
+        _Search for DBMS notes_: `/search sub dbms`
+        _Search for notes by professor_ *jks*: `/search prof jks`''')
+
     PROFILE_STRING = dedent('''
         • Name: *{name}*
         • Username: @{username}

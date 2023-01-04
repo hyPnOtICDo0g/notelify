@@ -12,9 +12,9 @@
          "department_id": "D3675",
          "branch": "ele"
       },
-      "dept4": {
-         "department_id": "D2801",
-         "branch": "it"
+      "admin": {
+         "department_id": "ADMIN",
+         "branch": "mng"
       }
    },
    "subject": {
