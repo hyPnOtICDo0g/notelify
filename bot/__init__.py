@@ -38,7 +38,7 @@ try:
     db_data['subject'] = x['subject']
     # env variables
     config = dotenv_values('.env')
-    if (len(config) < 5
+    if (len(config) < 6
         or (set(config.keys()) - constants.ENV_VARS)
         or not all(set(config.values()).intersection({None, ''}))):
         raise FileNotFoundError

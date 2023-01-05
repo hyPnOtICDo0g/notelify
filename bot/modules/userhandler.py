@@ -3,10 +3,10 @@ from telegram import Update
 from re import match, IGNORECASE
 from .dbhandler import DBHandler as dbh
 from bot.helpers.filters import CustomFilters
-from bot import application, db_data, mutex, LOGGER
 from bot.helpers.utilities import Utilities as utils
 from telegram.ext import ContextTypes, CommandHandler
-from psycopg2.errors import UniqueViolation, UndefinedTable
+from bot import application, config, db_data, mutex, LOGGER
+from psycopg2.errors import UniqueViolation, UndefinedTable, StringDataRightTruncation
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     '''Greets an user when the bot is used for the first time'''
@@ -25,10 +25,12 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
         # context.args ==> [usn, dept_name]
         context.args[0]
-        if update.message.chat.id in db_data['student']:
+        if context.args[1] == 'admin':
+            raise KeyError
+        elif update.message.chat.id in db_data['student']:
             raise UniqueViolation
-        elif len(context.args) == 2 \
-            and match('^\d[a-z]{2}\d{2}[a-z]{2}\d{3}$', context.args[0], IGNORECASE):
+        elif (len(context.args) == 2
+            and match(constants.USN_REGEX, context.args[0], IGNORECASE)):
             values = (
                 update.effective_user.first_name,
                 context.args[0].upper(),
@@ -77,8 +79,38 @@ async def unregister(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     except UndefinedTable:
         await update.effective_message.reply_text('Admins cannot unregister. Contact bot manager.')
 
+async def regprof(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    '''Undocumented command to register professors using a secret message'''
+    try:
+        # context.args ==> [secret_code, professor_abbr, department]
+        if context.args[2] == 'admin':
+            raise KeyError
+        elif context.args[0] == config['PROF_SECRET']:
+            values = (
+                update.effective_user.first_name,
+                context.args[1],
+                update.effective_user.id,
+                db_data['department'][context.args[2]]['department_id'],
+            )
+            dbh.write('professor', values)
+            async with mutex:
+                db_data['professor'].append(update.effective_user.id)
+            await update.effective_message.reply_markdown('*Successfully registered.*')
+            LOGGER.info(f'REGISTER | Professor: {update.effective_user.id} | Abbr: {context.args[1].upper()}')
+        else:
+            await update.effective_message.reply_text('Incorrect secret code.')
+    except IndexError:
+        await update.effective_message.reply_markdown(constants.REGPROF_HELPSTRING)
+    except KeyError:
+        await update.effective_message.reply_text('Invalid department.')
+    except UniqueViolation:
+        await update.effective_message.reply_text('Already registered.')
+    except StringDataRightTruncation:
+        await update.effective_message.reply_text('Abbreviation must be less than 4 characters.')
+
 application.add_handler(CommandHandler('profile', profile, block=False))
 application.add_handler(CommandHandler('help', help, block=False, filters=CustomFilters.user_filter))
 application.add_handler(CommandHandler('start', start, block=False, filters=~CustomFilters.group_filter))
+application.add_handler(CommandHandler('regprof', regprof, block=False, filters=~CustomFilters.group_filter))
 application.add_handler(CommandHandler('register', register, block=False, filters=CustomFilters.group_filter))
 application.add_handler(CommandHandler('unregister', unregister, block=False, filters=~CustomFilters.group_filter & CustomFilters.user_filter))

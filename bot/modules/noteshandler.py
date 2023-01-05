@@ -187,7 +187,7 @@ class SearchHandler:
             if res:
                 results_str = constants.VIEW_STRING.replace('• Subject: *{subject}*\n', '') + f'\n• {constants.AUTHOR_STRING}'
                 await update.effective_message.reply_markdown(
-                    utils.build_find_str(len(res), context, perf_counter() - start) \
+                    utils.build_find_str(len(res), context, perf_counter() - start)
                     + '\n'.join([results_str.format(
                         file=file_name,
                         group_id=int(config['CHANNEL_ID'][4:]),
@@ -228,5 +228,45 @@ class SearchHandler:
         except NameError:
             await update.effective_message.reply_text('No results found.')
 
+class StatsHandler:
+    @staticmethod
+    async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        '''Display database statistics'''
+        total = dbh.raw('''
+            SELECT
+                (SELECT COUNT(*) FROM student) AS cstudent,
+                (SELECT COUNT(*) FROM professor) AS cprof,
+                (SELECT COUNT(*) FROM notes) AS cnotes,
+                (SELECT SUM(total_requests) FROM notes) AS snotes,
+                (SELECT COUNT(*) FROM department) AS cdept''')
+
+        popular = dbh.raw('''
+            SELECT file_name, subject_abbr, module_no, professor_tgid, message_id, total_requests
+            FROM notes
+            WHERE total_requests = (SELECT MAX(total_requests) FROM notes) LIMIT 1''')
+
+        # welp
+        if not popular:
+            popular = [(None,) * 6]
+            first_name = [(None,)]
+        else:
+            first_name = dbh.fetch('name', 'professor', f'telegram_id = {popular[0][3]}')
+
+        await update.effective_message.reply_markdown(constants.STATS_STRING.format(
+            students=total[0][0],
+            professor=total[0][1],
+            notes=total[0][2],
+            search=total[0][3],
+            dept=total[0][4] - 1,
+            file=popular[0][0],
+            group_id=config['CHANNEL_ID'][4:],
+            id=popular[0][4],
+            subject=popular[0][1],
+            module=popular[0][2],
+            req=popular[0][5],
+            first=first_name[0][0],
+            user_id=popular[0][3]))
+
 application.add_handler(CommandHandler('notes', NotesHandler.notes, block=False, filters=CustomFilters.professor_filter))
 application.add_handler(CommandHandler('search', SearchHandler.search, block=False, filters=CustomFilters.user_filter))
+application.add_handler(CommandHandler('stats', StatsHandler.stats, block=False, filters=CustomFilters.user_filter))

@@ -97,8 +97,8 @@ class DBHandler:
     @classmethod
     def load(cls) -> None:
         '''Load data from and into a table during startup'''
-        db_data['admin'] += [x[0] for x in cls.fetch('telegram_id', 'manager')] # + [int(config['OWNER_ID'])]
-        db_data['professor'] += [x[0] for x in cls.fetch('telegram_id', 'professor')] # + [int(config['OWNER_ID'])]
+        db_data['admin'] += [x[0] for x in cls.fetch('telegram_id', 'manager')] + [int(config['OWNER_ID'])]
+        db_data['professor'] += [x[0] for x in cls.fetch('telegram_id', 'professor')]
         db_data['student'] += [x[0] for x in cls.fetch('telegram_id', 'student')]
         try:
             for x, y in db_data['department'].items():

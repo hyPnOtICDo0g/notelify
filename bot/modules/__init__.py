@@ -32,7 +32,7 @@ class constants:
             '''CREATE TABLE notes(
                 file_name TEXT NOT NULL,
                 subject_name TEXT NOT NULL,
-                subject_abbr VARCHAR(5) UNIQUE NOT NULL,
+                subject_abbr VARCHAR(5) NOT NULL,
                 module_no INT NOT NULL,
                 professor_tgid int,
                 department VARCHAR(6) NOT NULL,
@@ -55,8 +55,11 @@ class constants:
         'DATABASE_URL',
         'OWNER_ID',
         'GROUP_ID',
-        'CHANNEL_ID'
+        'CHANNEL_ID',
+        'PROF_SECRET'
     }
+
+    USN_REGEX = '^\d[a-z]{2}\d{2}[a-z]{2}\d{3}$'
 
     START_MESSAGE = dedent('''
         Send me a search query.
@@ -123,16 +126,21 @@ class constants:
             `/notes replace 4821` _(reply to document first)_''')
 
     SEARCH_HELPSTRING = dedent('''
-    > *Search filters* _[search by]_:
-    • `prof`: _professor_ | args: _professor abbreviation_
-    • `sub`: _subject_ | args: _subject abbreviation [module no.]_
+        > *Search filters* _[search by]_:
+        • `prof`: _professor_ | args: _professor abbreviation_
+        • `sub`: _subject_ | args: _subject abbreviation [module no.]_
 
-    > *Usage*:
-        `/search <filter> [arguments]`
+        > *Usage*:
+            `/search <filter> [arguments]`
 
-    > *Examples*:
-        _Search for DBMS notes_: `/search sub dbms`
-        _Search for notes by professor_ *jks*: `/search prof jks`''')
+        > *Examples*:
+            _Search for DBMS notes_: `/search sub dbms`
+            _Search for notes by professor_ *jks*: `/search prof jks`''')
+
+    REGPROF_HELPSTRING = dedent('''
+        > *Usage*:
+            `/regprof <secret_code> <abbreviation> <department>`''')
+
 
     PROFILE_STRING = dedent('''
         • Name: *{name}*
@@ -149,3 +157,15 @@ class constants:
         • Total requests: *{req}*''')
 
     AUTHOR_STRING = 'Author: [{first}](tg://user?id={user_id})'
+
+    STATS_STRING = (dedent('''
+        > *Total*:
+        • Registered students: {students}
+        • Registered professors: {professor}
+        • Notes uploaded: {notes}
+        • Search requests: {search}
+        • Departments: {dept}
+
+        > *Most popular*:''')
+        + VIEW_STRING.replace('File', 'Notes')
+        + f"\n• {AUTHOR_STRING.replace('Author', 'Professor')}")
