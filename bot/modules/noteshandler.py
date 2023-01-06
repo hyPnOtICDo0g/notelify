@@ -130,7 +130,8 @@ class NotesHandler:
         except AttributeError:
             await update.effective_message.reply_text('Document not found, Try again.')
         except BadRequest:
-            LOGGER.info(f'FAILED CHANNEL MSG DELETE | Professor: {update.effective_user.id} | ID: {message_id}')
+            await update.effective_message.reply_text('Unknown error, Contact bot manager.')
+            LOGGER.error(f'FAILED CHANNEL MSG OPERATION | Professor: {update.effective_user.id}')
 
 class SearchHandler:
     @staticmethod
@@ -176,7 +177,7 @@ class SearchHandler:
             res = dbh.raw(f"""
                 SELECT file_name, message_id, module_no, total_requests, professor_tgid, name
                 FROM notes, professor
-                WHERE subject_abbr = '{context.args[1].upper()}' AND
+                WHERE subject_abbr = '{context.args[1].upper()}' AND professor_tgid=telegram_id AND
                     CASE
                         WHEN {module_no} <> -1
                             THEN module_no = {module_no}
@@ -245,12 +246,15 @@ class StatsHandler:
             FROM notes
             WHERE total_requests = (SELECT MAX(total_requests) FROM notes) LIMIT 1''')
 
-        # welp
-        if not popular:
-            popular = [(None,) * 6]
+        try:
+            # welp
+            if not popular or popular[3]:
+                popular = [(None,) * 6]
+                raise IndexError
+            else:
+                first_name = dbh.fetch('name', 'professor', f'telegram_id = {popular[0][3]}')
+        except IndexError:
             first_name = [(None,)]
-        else:
-            first_name = dbh.fetch('name', 'professor', f'telegram_id = {popular[0][3]}')
 
         await update.effective_message.reply_markdown(constants.STATS_STRING.format(
             students=total[0][0],

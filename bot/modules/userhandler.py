@@ -35,7 +35,7 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                 update.effective_user.first_name,
                 context.args[0].upper(),
                 update.effective_user.id,
-                db_data['department'][context.args[1]]['department_id'])
+                db_data['department'][context.args[1].lower()]['department_id'])
             dbh.write('student', values)
             async with mutex:
                 db_data['student'].append(update.effective_user.id)
@@ -90,8 +90,7 @@ async def regprof(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                 update.effective_user.first_name,
                 context.args[1],
                 update.effective_user.id,
-                db_data['department'][context.args[2]]['department_id'],
-            )
+                db_data['department'][context.args[2].lower()]['department_id'])
             dbh.write('professor', values)
             async with mutex:
                 db_data['professor'].append(update.effective_user.id)

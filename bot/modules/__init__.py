@@ -38,7 +38,7 @@ class constants:
                 department VARCHAR(6) NOT NULL,
                 message_id INT PRIMARY KEY,
                 total_requests INT DEFAULT 0 NOT NULL,
-                FOREIGN KEY(professor_tgid) REFERENCES professor(telegram_id) ON DELETE SET NULL
+                FOREIGN KEY(professor_tgid) REFERENCES professor(telegram_id) ON DELETE CASCADE
             );'''
         )
 
@@ -86,9 +86,8 @@ class constants:
         *Detailed usage is displayed on clicking any of the above\.*''')
 
     REG_HELPSTRING = dedent('''
-        • The */register* command takes an USN and Department Name.
-        • Use it in this format: `/register USN DEPT_NAME`
-        • The bot's DM can be used for further usage.''')
+        • The */register* command accepts an USN and Department Name.
+        • Use it in this format: `/register USN DEPT_NAME`''')
 
     NOTES_HELPSTRING = dedent('''
         > *Functions available*:
