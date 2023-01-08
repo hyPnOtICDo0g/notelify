@@ -4,7 +4,7 @@ class constants:
     TABLES = (
             '''CREATE TABLE manager(
                 username TEXT NOT NULL,
-                telegram_id int PRIMARY KEY
+                telegram_id BIGINT PRIMARY KEY
             );''',
 
             '''CREATE TABLE department(
@@ -15,8 +15,8 @@ class constants:
 
             '''CREATE TABLE professor(
                 name TEXT NOT NULL,
-                abbreviation VARCHAR(3) NOT NULL,
-                telegram_id int PRIMARY KEY,
+                abbreviation VARCHAR(3) UNIQUE NOT NULL,
+                telegram_id BIGINT PRIMARY KEY,
                 department_id CHAR(5) NOT NULL,
                 FOREIGN KEY(department_id) REFERENCES DEPARTMENT(department_id)
             );''',
@@ -24,7 +24,7 @@ class constants:
             '''CREATE TABLE student(
                 name TEXT NOT NULL,
                 usn CHAR(10) PRIMARY KEY,
-                telegram_id int UNIQUE NOT NULL,
+                telegram_id BIGINT UNIQUE NOT NULL,
                 department_id CHAR(5) NOT NULL,
                 FOREIGN KEY(department_id) REFERENCES DEPARTMENT(department_id)
             );''',
@@ -34,7 +34,7 @@ class constants:
                 subject_name TEXT NOT NULL,
                 subject_abbr VARCHAR(5) NOT NULL,
                 module_no INT NOT NULL,
-                professor_tgid int,
+                professor_tgid BIGINT,
                 department VARCHAR(6) NOT NULL,
                 message_id INT PRIMARY KEY,
                 total_requests INT DEFAULT 0 NOT NULL,
@@ -50,14 +50,14 @@ class constants:
             ('notes', 'View / Add / Remove / Replace lecture notes [PROFESSOR]')
         ]
 
-    ENV_VARS = {
+    ENV_VARS = (
         'BOT_TOKEN',
         'DATABASE_URL',
         'OWNER_ID',
         'GROUP_ID',
         'CHANNEL_ID',
         'PROF_SECRET'
-    }
+    )
 
     USN_REGEX = '^\d[a-z]{2}\d{2}[a-z]{2}\d{3}$'
 

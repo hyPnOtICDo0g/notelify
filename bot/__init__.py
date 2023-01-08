@@ -1,4 +1,5 @@
 from json import load
+from os import environ
 from asyncio import Lock
 from .modules import constants
 from sys import exit as exitnow
@@ -37,13 +38,14 @@ try:
     db_data['department'] = x['department']
     db_data['subject'] = x['subject']
     # env variables
-    config = dotenv_values('.env')
-    if (len(config) < 6
-        or (set(config.keys()) - constants.ENV_VARS)
-        or not all(set(config.values()).intersection({None, ''}))):
-        raise FileNotFoundError
-except (FileNotFoundError, ValueError):
-    LOGGER.critical('JSON file or env variables are missing / corrupt! Exiting.')
+    config = {
+        **dotenv_values('.env'),
+        **environ
+    }
+    if not all(bool(config[x]) is not False for x in constants.ENV_VARS):
+        raise KeyError
+except (FileNotFoundError, ValueError, KeyError):
+    LOGGER.critical('JSON file or env variables are missing or corrupt! Exiting.')
     exitnow(1)
 
 application = (

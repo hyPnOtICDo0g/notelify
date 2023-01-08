@@ -103,7 +103,7 @@ async def regprof(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     except KeyError:
         await update.effective_message.reply_text('Invalid department.')
     except UniqueViolation:
-        await update.effective_message.reply_text('Already registered.')
+        await update.effective_message.reply_markdown(f'You are either a registered user or *{context.args[1].lower()}* is already taken.')
     except StringDataRightTruncation:
         await update.effective_message.reply_text('Abbreviation must be less than 4 characters.')
 

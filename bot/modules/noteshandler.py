@@ -2,12 +2,12 @@ from . import constants
 from telegram import Update
 from time import perf_counter
 from telegram.error import BadRequest
-from psycopg2.errors import SyntaxError
 from .dbhandler import DBHandler as dbh
 from bot.helpers.filters import CustomFilters
 from bot.helpers.utilities import Utilities as utils
 from bot import application, config, db_data, LOGGER
 from telegram.ext import ContextTypes, CommandHandler
+from psycopg2.errors import SyntaxError, NumericValueOutOfRange
 
 class NotesHandler:
     @staticmethod
@@ -52,8 +52,8 @@ class NotesHandler:
             await update.effective_message.reply_markdown(constants.NOTES_ADD_HELPSTRING)
         except KeyError:
             await update.effective_message.reply_text('Invalid subject, it does not exist.')
-        except ValueError:
-            await update.effective_message.reply_text('Invalid module number. Pass integer arguments only.')
+        except (ValueError, NumericValueOutOfRange):
+            await update.effective_message.reply_text('Invalid module number.')
         else:
             await update.effective_message.reply_markdown('*Successfully added notes to database.*')
 
@@ -175,12 +175,12 @@ class SearchHandler:
                 pass
 
             res = dbh.raw(f"""
-                SELECT file_name, message_id, module_no, total_requests, professor_tgid, name
-                FROM notes, professor
-                WHERE subject_abbr = '{context.args[1].upper()}' AND professor_tgid=telegram_id AND
+                SELECT n.file_name, n.message_id, n.module_no, n.total_requests, n.professor_tgid, p.name
+                FROM notes n, professor p
+                WHERE n.subject_abbr = '{context.args[1].upper()}' AND n.professor_tgid=p.telegram_id AND
                     CASE
                         WHEN {module_no} <> -1
-                            THEN module_no = {module_no}
+                            THEN n.module_no = {module_no}
                         ELSE
                             TRUE
                         END""")
@@ -242,19 +242,13 @@ class StatsHandler:
                 (SELECT COUNT(*) FROM department) AS cdept''')
 
         popular = dbh.raw('''
-            SELECT file_name, subject_abbr, module_no, professor_tgid, message_id, total_requests
-            FROM notes
-            WHERE total_requests = (SELECT MAX(total_requests) FROM notes) LIMIT 1''')
+            SELECT n.file_name, n.subject_abbr, n.module_no, n.professor_tgid, n.message_id, n.total_requests, p.name
+            FROM notes n, professor p
+            WHERE n.professor_tgid=p.telegram_id AND n.total_requests = (SELECT MAX(total_requests) FROM notes) LIMIT 1''')
 
-        try:
-            # welp
-            if not popular or popular[3]:
-                popular = [(None,) * 6]
-                raise IndexError
-            else:
-                first_name = dbh.fetch('name', 'professor', f'telegram_id = {popular[0][3]}')
-        except IndexError:
-            first_name = [(None,)]
+        # welp
+        if not popular:
+            popular = [(None,) * 7]
 
         await update.effective_message.reply_markdown(constants.STATS_STRING.format(
             students=total[0][0],
@@ -268,7 +262,7 @@ class StatsHandler:
             subject=popular[0][1],
             module=popular[0][2],
             req=popular[0][5],
-            first=first_name[0][0],
+            first=popular[0][6],
             user_id=popular[0][3]))
 
 application.add_handler(CommandHandler('notes', NotesHandler.notes, block=False, filters=CustomFilters.professor_filter))
